@@ -1,6 +1,6 @@
-import arcjet, { detectBot, shield } from "@arcjet/next";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import aj from "@/lib/arcjet";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -8,35 +8,24 @@ const isProtectedRoute = createRouteMatcher([
   "/transaction(.*)",
 ]);
 
-const aj = arcjet({
-  key: process.env.ARCJET_KEY,
-  rules: [
-    shield({
-      mode: "LIVE",
-    }),
-    detectBot({
-      mode: "LIVE",
-      allow: [
-        "CATEGORY:SEARCH_ENGINE",
-        "CATEGORY:MONITOR",
-        "CATEGORY:PREVIEW",
-        "GO_HTTP",
-      ],
-    }),
-  ],
-});
-
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
 
+  // 1. Run Arcjet Security
   const decision = await aj.protect(req, {
     userId: userId || "anonymous",
+    // Match the "tokenBucket" rule you added in your screenshot
+    requested: 1, 
   });
 
   if (decision.isDenied()) {
+    if (decision.reason.isRateLimit()) {
+      return new NextResponse("Too Many Requests", { status: 429 });
+    }
     return new NextResponse("Forbidden", { status: 403 });
   }
 
+  // 2. Run Clerk Auth
   if (!userId && isProtectedRoute(req)) {
     const { redirectToSignIn } = await auth();
     return redirectToSignIn();
@@ -47,7 +36,8 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // This optimized matcher is CRITICAL for reducing bundle size
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     "/(api|trpc)(.*)",
   ],
 };
