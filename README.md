@@ -59,19 +59,17 @@ Full-Stack Web Application · Version 1.0
 
 ## 📂 Project Structure
 
-
+```
 financetracker/
 │
-├── App.jsx # Frontend UI
-├── server.js # Backend API
-├── db.js # Supabase config
-├── ocrProcessor.js # OCR + parsing
-├── emailService.js # Email sender
-├── reportGenerator.js # PDF generator
-├── .env # Environment variables
-
-
----
+├── App.jsx              # Frontend UI
+├── server.js            # Backend API
+├── db.js                # Supabase config
+├── ocrProcessor.js      # OCR + parsing
+├── emailService.js      # Email sender
+├── reportGenerator.js   # PDF generator
+└── .env                 # Environment variables
+```
 
 ## ⚙️ Installation & Setup
 
